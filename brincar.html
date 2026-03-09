@@ -1,0 +1,2603 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missão Foguetão - Função Quadrática</title>
+   <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #0a0a2e 0%, #1a1a4e 50%, #2d1b4e 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* --- INÍCIO DA ALTERAÇÃO DO CABEÇALHO --- */
+        .header-wrapper {
+            display: flex;             /* 1. Coloca lado a lado */
+            align-items: center;       /* 2. Alinhamento vertical centrado */
+            justify-content: center;   /* 3. Centra o grupo na página */
+            gap: 20px;                 /* 4. Espaço entre imagem e texto */
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            /* ALTERADO: De 2.5rem para 1.8rem para ficar mais pequeno */
+            font-size: 1.8rem;         
+            margin: 0;                 
+            text-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
+            line-height: 1;            
+        }
+
+        .logo-inventors {
+            display: block;
+            height: 70px;              /* Altura da imagem (podes ajustar se quiseres maior/menor) */
+            width: auto;               /* Mantém a proporção */
+            border-radius: 10px;
+        }
+		/* --- FIM DA ALTERAÇÃO DO CABEÇALHO --- */
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 250px 1fr 250px;
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .canvas-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 15px;
+            border: 2px solid rgba(100, 200, 255, 0.3);
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            border-radius: 10px;
+            background: #000;
+            cursor: crosshair;
+        }
+
+        /* Equação no canto superior direito do gráfico */
+        .formula-overlay {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(100, 200, 255, 0.5);
+            font-family: 'Times New Roman', serif;
+            font-size: 1.3rem;
+            color: #fff;
+            z-index: 10;
+        }
+
+        /* Modal de introdução e resultado */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal-box {
+            background: linear-gradient(135deg, #1a1a4e 0%, #2d1b4e 100%);
+            border: 2px solid rgba(100, 200, 255, 0.5);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(100, 200, 255, 0.3);
+        }
+
+        .modal-box h2 {
+            color: #7dd3fc;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .modal-box .objectives-list {
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .modal-box .objective-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .modal-box .objective-item .icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .modal-box .objective-item .icon.pending {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-box .objective-item .icon.success {
+            background: #22c55e;
+        }
+
+        .modal-box .objective-item .icon.fail {
+            background: #ef4444;
+        }
+
+        .modal-box .modal-btn {
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .modal-box .modal-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
+        }
+
+        /* Contagem decrescente */
+        .countdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .countdown-overlay.hidden {
+            display: none;
+        }
+
+        .countdown-number {
+            font-size: 8rem;
+            font-weight: bold;
+            color: #f97316;
+            text-shadow: 0 0 50px rgba(249, 115, 22, 0.8);
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        #graphTooltip {
+            position: fixed;
+            background: rgba(10, 10, 40, 0.9);
+            border: 1px solid #7dd3fc;
+            padding: 8px 12px;
+            border-radius: 6px;
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+            font-size: 0.9rem;
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            transform: translate(-50%, -100%);
+            margin-top: -10px;
+        }
+
+        .left-controls {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(100, 200, 255, 0.3);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(100, 200, 255, 0.3);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .control-group {
+            margin-bottom: 18px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+            color: #7dd3fc;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .range-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+
+        .range-row span {
+            min-width: 30px;
+        }
+
+        .range-input {
+            width: 55px;
+            padding: 4px 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #9ca3af;
+            font-size: 0.8rem;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .range-input:focus {
+            border-color: #7dd3fc;
+            color: #fff;
+        }
+
+        /* Esconder setas de incremento/decremento em todos os inputs numéricos */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* Estilo para avisos de valor fora do intervalo */
+        .value-warning {
+            color: #fbbf24;
+            font-size: 0.8rem;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .control-group input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .control-group input[type="range"]:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+            cursor: grab;
+            box-shadow: 0 2px 8px rgba(125, 211, 252, 0.4);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 2px 12px rgba(125, 211, 252, 0.6);
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+
+        .value-input {
+            width: 70px;
+            padding: 8px 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fbbf24;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .value-input:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .value-input:focus {
+            border-color: #7dd3fc;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .result-success {
+            background: rgba(34, 197, 94, 0.3);
+            border: 2px solid #22c55e;
+        }
+
+        .result-partial {
+            background: rgba(251, 191, 36, 0.3);
+            border: 2px solid #fbbf24;
+        }
+
+        .result-fail {
+            background: rgba(239, 68, 68, 0.3);
+            border: 2px solid #ef4444;
+        }
+
+        .math-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .math-info h4 {
+            color: #7dd3fc;
+            margin-bottom: 8px;
+        }
+
+        .launch-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .launch-btn:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
+        }
+
+        .launch-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .left-controls.controls-disabled input,
+        .left-controls.controls-disabled input[type="range"],
+        .controls.controls-disabled input,
+        .controls.controls-disabled input[type="range"] {
+            opacity: 0.4;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+        }
+
+        .section-title {
+            color: #7dd3fc;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.1rem;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .mission-objectives {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .mission-objectives h4 {
+            color: #fbbf24;
+            margin-bottom: 10px;
+        }
+
+        .objective {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .objective-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .objective-pending {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .objective-success {
+            background: #22c55e;
+        }
+
+        .objective-fail {
+            background: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Modal de Introdução -->
+    <div class="modal-overlay" id="introModal">
+        <div class="modal-box">
+            <h2>🚀 Missão Foguetão</h2>
+            <p>Bem-vindo, astronauta! A tua missão é pilotar o foguetão usando funções quadráticas.</p>
+            <div class="objectives-list">
+                <div class="objective-item">
+                    <div class="icon pending">1</div>
+                    <span>Contornar a Lua (passar por cima)</span>
+                </div>
+                <div class="objective-item">
+                    <div class="icon pending">2</div>
+                    <span>Aterrar na Terra</span>
+                </div>
+            </div>
+            <p>Ajusta os parâmetros a, b e c da função quadrática para traçar a trajetória perfeita!</p>
+            <button class="modal-btn" id="startGameBtn">Iniciar Missão</button>
+        </div>
+    </div>
+
+    <!-- Modal de Resultado -->
+    <div class="modal-overlay hidden" id="resultModal">
+        <div class="modal-box">
+            <h2 id="resultModalTitle">Resultado da Missão</h2>
+            <div class="objectives-list">
+                <div class="objective-item">
+                    <div class="icon" id="resultObj1Icon">1</div>
+                    <span>Contornar a Lua</span>
+                </div>
+                <div class="objective-item">
+                    <div class="icon" id="resultObj2Icon">2</div>
+                    <span>Aterrar na Terra</span>
+                </div>
+            </div>
+            <p id="resultModalText"></p>
+            <button class="modal-btn" id="closeResultBtn">Tentar Novamente</button>
+        </div>
+    </div>
+
+    <!-- Contagem Decrescente -->
+    <div class="countdown-overlay hidden" id="countdownOverlay">
+        <div class="countdown-number" id="countdownNumber">3</div>
+    </div>
+
+    <canvas class="stars" id="starsCanvas"></canvas>
+
+    <div class="container">
+        <div class="header-wrapper">
+            <img src="data:image/png;base64,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" alt="The Inventors" class="logo-inventors">
+            <h1>Mission FunQuadFun</h1>
+        </div>
+        <p class="subtitle">Contorna a Lua e aterra na Terra usando funções quadráticas!</p>
+
+        <div class="main-content">
+            <!-- Controlos da Esquerda: Lua e Terra -->
+            <div class="left-controls">
+                <div class="section">
+                    <h3 class="section-title">Posição da Lua</h3>
+
+                    <div class="control-group">
+                        <label>Centro X da Lua</label>
+                        <input type="number" class="value-input" id="inputMoonX" step="0.01" value="4.00" style="width: 100%;">
+                        <div class="value-warning" id="moonX_warning"></div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Centro Y da Lua</label>
+                        <input type="number" class="value-input" id="inputMoonY" step="0.01" value="6.00" style="width: 100%;">
+                        <div class="value-warning" id="moonY_warning"></div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Raio da Lua</label>
+                        <div class="slider-container">
+                            <input type="range" id="moonRadius" min="0.1" max="2" step="0.01" value="1.5">
+                            <input type="number" class="value-input" id="inputMoonR" step="0.01" value="1.50" min="0.1" max="2">
+                        </div>
+                        <div class="value-warning" id="moonRadius_warning"></div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3 class="section-title">Posição da Terra</h3>
+
+                    <div class="control-group">
+                        <label>Centro da Terra (eixo X)</label>
+                        <div class="slider-container">
+                            <input type="range" id="earthX" min="10" max="20" step="0.01" value="10">
+                            <input type="number" class="value-input" id="inputEarthX" step="0.01" value="10.00" min="10">
+                        </div>
+                        <div class="range-row">
+                            <span>Min:</span>
+                            <input type="number" class="range-input" id="earthX_min" value="10">
+                            <span>Max:</span>
+                            <input type="number" class="range-input" id="earthX_max" value="20">
+                        </div>
+                        <div class="value-warning" id="earthX_warning"></div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Raio da Terra</label>
+                        <div class="slider-container">
+                            <input type="range" id="earthRadius" min="2" max="8" step="0.01" value="4">
+                            <input type="number" class="value-input" id="inputEarthR" step="0.01" value="4.00" min="2" max="8">
+                        </div>
+                        <div class="value-warning" id="earthRadius_warning"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área do Gráfico -->
+            <div class="canvas-container">
+                <div class="formula-overlay">
+                    y = <span id="aDisplay">-0.5</span>x² + <span id="bDisplay">5</span>x + <span id="cDisplay">0</span>
+                </div>
+                <canvas id="graphCanvas" width="900" height="600"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3b82f6;"></div>
+                        <span>Terra</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #e5e7eb;"></div>
+                        <span>Lua</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f97316;"></div>
+                        <span>Trajetória</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controlos da Direita: Função e Botões -->
+            <div class="controls">
+                <div class="section">
+                    <h3 class="section-title">Função Quadrática</h3>
+
+                    <div class="control-group">
+                        <label>a (curvatura)</label>
+                        <div class="slider-container">
+                            <input type="range" id="paramA" min="-2" max="-0.1" step="0.01" value="-0.5">
+                            <input type="number" class="value-input" id="inputA" step="0.01" value="-0.50" max="-0.1">
+                        </div>
+                        <div class="range-row">
+                            <span>Min:</span>
+                            <input type="number" class="range-input" id="paramA_min" value="-25">
+                            <span>Max:</span>
+                            <input type="number" class="range-input" id="paramA_max" value="-0.1">
+                        </div>
+                        <div class="value-warning" id="paramA_warning"></div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>b (inclinação inicial)</label>
+                        <div class="slider-container">
+                            <input type="range" id="paramB" min="0" max="12" step="0.01" value="5">
+                            <input type="number" class="value-input" id="inputB" step="0.01" value="5.00">
+                        </div>
+                        <div class="range-row">
+                            <span>Min:</span>
+                            <input type="number" class="range-input" id="paramB_min" value="0">
+                            <span>Max:</span>
+                            <input type="number" class="range-input" id="paramB_max" value="12">
+                        </div>
+                        <div class="value-warning" id="paramB_warning"></div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>c (altura inicial)</label>
+                        <div class="slider-container">
+                            <input type="range" id="paramC" min="-5" max="20" step="0.01" value="0">
+                            <input type="number" class="value-input" id="inputC" step="0.01" value="0.00">
+                        </div>
+                        <div class="range-row">
+                            <span>Min:</span>
+                            <input type="number" class="range-input" id="paramC_min" value="-5">
+                            <span>Max:</span>
+                            <input type="number" class="range-input" id="paramC_max" value="20">
+                        </div>
+                        <div class="value-warning" id="paramC_warning"></div>
+                    </div>
+                </div>
+
+                <button class="launch-btn" id="launchBtn">Lançar Foguetão</button>
+                <button class="reset-btn" id="resetBtn">Reiniciar</button>
+
+                <div class="math-info">
+                    <h4>Informação Matemática</h4>
+                    <p><strong>Discriminante:</strong> <span id="discriminant">-</span></p>
+                    <p><strong>Raízes:</strong> <span id="roots">-</span></p>
+                    <p><strong>Vértice:</strong> <span id="vertex">-</span></p>
+                    <p><strong>Intervalo Terra:</strong> <span id="earthInterval">-</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Canvas das estrelas
+        const starsCanvas = document.getElementById('starsCanvas');
+        const starsCtx = starsCanvas.getContext('2d');
+
+        function resizeStars() {
+            starsCanvas.width = window.innerWidth;
+            starsCanvas.height = window.innerHeight;
+            drawStars();
+        }
+
+        function drawStars() {
+            starsCtx.fillStyle = 'transparent';
+            starsCtx.fillRect(0, 0, starsCanvas.width, starsCanvas.height);
+
+            for (let i = 0; i < 200; i++) {
+                const x = Math.random() * starsCanvas.width;
+                const y = Math.random() * starsCanvas.height;
+                const radius = Math.random() * 1.5;
+                const opacity = Math.random() * 0.8 + 0.2;
+
+                starsCtx.beginPath();
+                starsCtx.arc(x, y, radius, 0, Math.PI * 2);
+                starsCtx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                starsCtx.fill();
+            }
+        }
+
+        window.addEventListener('resize', resizeStars);
+        resizeStars();
+
+        // Canvas do gráfico
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Parâmetros da função
+        let a = -0.5, b = 5, c = 0;
+        let lastValidA = -0.5;  // Último valor válido de 'a' (negativo)
+        let lastValidB = 5;     // Último valor válido de 'b' (positivo)
+
+        // Parâmetros da Lua
+        let moonCenterX = 4;
+        let moonCenterY = 6;
+        let moonRadius = 1.5;
+
+        // Parâmetros da Terra
+        let earthCenterX = 10;
+        let earthRadius = 4;
+
+        // Imagem da Terra (fotorealista)
+        const earthImage = new Image();
+        earthImage.crossOrigin = 'anonymous'; // Permite carregar imagens de outros domínios
+        earthImage.src = 'https://images.vexels.com/media/users/3/157971/isolated/preview/393140c13ded6abdd322098d2d02a6d7-ilustracao-do-planeta-terra.png';
+        let earthImageLoaded = false;
+        earthImage.onload = function() {
+            earthImageLoaded = true;
+            draw(); // Redesenhar quando a imagem carregar
+        };
+
+        // Animação
+        let animationProgress = 0;
+        let isAnimating = false;
+        let animationId = null;
+        let hasLaunched = false;
+        let collisionPoint = null;
+        let landingPoint = null;
+        let isLanding = false;
+        let landingAnimationProgress = 0;
+        let isMissing = false;
+        let missAnimationProgress = 0;
+        let missPoint = null;
+        let isPartialLanding = false; // Aterrou na Terra mas não contornou a Lua
+
+        // Escala e origem (serão calculados dinamicamente)
+        let scale = 45;
+        const originX = 80;
+        let originY = canvas.height - 80;
+        const padding = 50; // Margem para labels e bordas
+
+        // Função para calcular a escala dinâmica
+        function calculateDynamicScale() {
+		// 1. Calcular pontos de interesse da parábola
+		const xv = -b / (2 * a);
+		const yv = a * xv * xv + b * xv + c;
+
+		const discriminant = b * b - 4 * a * c;
+		let maxRootX = 0;
+		if (discriminant >= 0) {
+			const x1 = (-b - Math.sqrt(discriminant)) / (2 * a);
+			const x2 = (-b + Math.sqrt(discriminant)) / (2 * a);
+			maxRootX = Math.max(x1, x2);
+		}
+
+		// 2. Determinar limites máximos necessários (Bounding Box)
+		// Precisamos de ver: Lua, Terra, Raiz mais distante, Vértice e Ponto de partida (C)
+		
+		// Limites em X
+		const luaMaxX = moonCenterX + moonRadius;
+		const terraMaxX = earthCenterX + earthRadius;
+		// O X máximo é o maior valor entre todos os elementos + margem
+		// Se o vértice for positivo, também queremos vê-lo
+		const maxX = Math.max(
+			maxRootX, 
+			luaMaxX, 
+			terraMaxX, 
+			(xv > 0 ? xv : 0)
+		) + 2; // +2 de margem
+
+		// Limites em Y
+		const luaMaxY = moonCenterY + moonRadius;
+		// O Y máximo é o pico da parábola (vértice), a lua, ou a altura inicial (c)
+		const maxY = Math.max(
+			yv, 
+			luaMaxY, 
+			Math.max(0, c)
+		) + 2; // +2 de margem
+	
+		// O Y mínimo (para garantir que vemos o chão e se c for negativo)
+		const minY = Math.min(0, c) - 2;
+	
+		// 3. Calcular escala
+		const availableWidth = canvas.width - originX - padding;
+		const availableHeight = canvas.height - padding * 2; // Margem em cima e em baixo
+	
+		// Escala baseada na largura necessária
+		const scaleX = availableWidth / maxX;
+		
+		// Escala baseada na altura necessária (Height / DeltaY)
+		const totalHeightNeeded = maxY - minY;
+		const scaleY = availableHeight / totalHeightNeeded;
+	
+		// Escolher a menor escala para que tudo caiba (mantendo proporção 1:1)
+		const newScale = Math.min(scaleX, scaleY);
+	
+		// 4. Aplicar limites suaves
+		// Permitimos zoom out até scale=2 (muito afastado) e zoom in até scale=100
+		scale = Math.max(2, Math.min(100, newScale));
+	
+		// 5. Ajustar a origem Y
+		// Se a escala for pequena, o gráfico encolhe. Temos de fixar a "chão" visualmente.
+		// A fórmula garante que o minY fica dentro do canvas
+		originY = canvas.height - padding - (Math.abs(minY) * scale);
+		
+		// Proteção extra para não cortar o topo
+		if (originY - (maxY * scale) < 0) {
+			originY = (maxY * scale) + padding;
+		}
+	}		
+	
+        // Elementos DOM - Sliders
+        const paramA = document.getElementById('paramA');
+        const paramB = document.getElementById('paramB');
+        const paramC = document.getElementById('paramC');
+        const moonRadiusSlider = document.getElementById('moonRadius');
+        const earthXSlider = document.getElementById('earthX');
+        const earthRadiusSlider = document.getElementById('earthRadius');
+
+        // Elementos DOM - Inputs numéricos
+        const inputA = document.getElementById('inputA');
+        const inputB = document.getElementById('inputB');
+        const inputC = document.getElementById('inputC');
+        const inputMoonX = document.getElementById('inputMoonX');
+        const inputMoonY = document.getElementById('inputMoonY');
+        const inputMoonR = document.getElementById('inputMoonR');
+        const inputEarthX = document.getElementById('inputEarthX');
+        const inputEarthR = document.getElementById('inputEarthR');
+
+        const aDisplay = document.getElementById('aDisplay');
+        const bDisplay = document.getElementById('bDisplay');
+        const cDisplay = document.getElementById('cDisplay');
+
+        const launchBtn = document.getElementById('launchBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Elementos dos Modais
+        const introModal = document.getElementById('introModal');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const resultModal = document.getElementById('resultModal');
+        const resultModalTitle = document.getElementById('resultModalTitle');
+        const resultModalText = document.getElementById('resultModalText');
+        const resultObj1Icon = document.getElementById('resultObj1Icon');
+        const resultObj2Icon = document.getElementById('resultObj2Icon');
+        const closeResultBtn = document.getElementById('closeResultBtn');
+        const countdownOverlay = document.getElementById('countdownOverlay');
+        const countdownNumber = document.getElementById('countdownNumber');
+
+        // Variáveis para tracking de resultado
+        let missionResult = { obj1: false, obj2: false, message: '' };
+
+        // Função para bloquear/desbloquear controlos durante o lançamento
+        function setControlsEnabled(enabled) {
+            const leftPanel = document.querySelector('.left-controls');
+            const rightPanel = document.querySelector('.controls');
+            if (enabled) {
+                leftPanel.classList.remove('controls-disabled');
+                rightPanel.classList.remove('controls-disabled');
+                launchBtn.disabled = false;
+            } else {
+                leftPanel.classList.add('controls-disabled');
+                rightPanel.classList.add('controls-disabled');
+                launchBtn.disabled = true;
+            }
+        }
+
+        // Função para fechar o modal de introdução
+        startGameBtn.addEventListener('click', () => {
+            introModal.classList.add('hidden');
+        });
+
+        // Função para fechar o modal de resultado
+        closeResultBtn.addEventListener('click', () => {
+            resultModal.classList.add('hidden');
+        });
+
+        // Função para mostrar o modal de resultado
+        function showResultModal(obj1Success, obj2Success, message, isSuccess) {
+            resultObj1Icon.className = 'icon ' + (obj1Success ? 'success' : 'fail');
+            resultObj1Icon.textContent = obj1Success ? '✓' : '✗';
+            resultObj2Icon.className = 'icon ' + (obj2Success ? 'success' : 'fail');
+            resultObj2Icon.textContent = obj2Success ? '✓' : '✗';
+
+            if (obj1Success && obj2Success) {
+                resultModalTitle.textContent = '🎉 Missão Completa!';
+                resultModalTitle.style.color = '#22c55e';
+            } else if (obj2Success) {
+                resultModalTitle.textContent = '⚠️ Missão Parcial';
+                resultModalTitle.style.color = '#fbbf24';
+            } else {
+                resultModalTitle.textContent = '💥 Missão Falhada';
+                resultModalTitle.style.color = '#ef4444';
+            }
+
+            resultModalText.textContent = message;
+            resultModal.classList.remove('hidden');
+
+            // Desbloquear controlos após mostrar o resultado da missão
+            setControlsEnabled(true);
+        }
+
+        // Função de contagem decrescente
+        function startCountdown(callback) {
+            let count = 3;
+            countdownOverlay.classList.remove('hidden');
+            countdownNumber.textContent = count;
+            countdownNumber.style.animation = 'none';
+            void countdownNumber.offsetWidth; // Trigger reflow
+            countdownNumber.style.animation = 'pulse 0.5s ease-in-out';
+
+            const interval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownNumber.textContent = count;
+                    countdownNumber.style.animation = 'none';
+                    void countdownNumber.offsetWidth;
+                    countdownNumber.style.animation = 'pulse 0.5s ease-in-out';
+                } else if (count === 0) {
+                    countdownNumber.textContent = 'LANÇAR!';
+                    countdownNumber.style.fontSize = '4rem';
+                    countdownNumber.style.animation = 'none';
+                    void countdownNumber.offsetWidth;
+                    countdownNumber.style.animation = 'pulse 0.5s ease-in-out';
+                } else {
+                    clearInterval(interval);
+                    countdownOverlay.classList.add('hidden');
+                    countdownNumber.style.fontSize = '8rem';
+                    callback();
+                }
+            }, 800);
+        }
+
+        // Função para sincronizar slider e input com avisos de valor fora do intervalo
+        function syncControlsWithWarning(slider, input, warningId, updateCallback) {
+            const warning = document.getElementById(warningId);
+
+            // Quando o slider muda, atualiza o input
+            slider.addEventListener('input', () => {
+                input.value = parseFloat(slider.value).toFixed(2);
+                warning.style.display = 'none';
+                updateCallback();
+            });
+
+            // Quando o input muda, verifica se está dentro do intervalo
+            input.addEventListener('input', () => {
+                const val = parseFloat(input.value);
+                const min = parseFloat(slider.min);
+                const max = parseFloat(slider.max);
+
+                if (!isNaN(val)) {
+                    if (val < min || val > max) {
+                        // Valor fora do intervalo - mostrar aviso
+                        warning.textContent = `Altera o intervalo para utilizar o valor ${val.toFixed(2)} (atual: [${min}, ${max}])`;
+                        warning.style.display = 'block';
+                    } else {
+                        // Valor válido - atualizar slider e esconder aviso
+                        warning.style.display = 'none';
+                        slider.value = val;
+                        updateCallback();
+                    }
+                }
+            });
+
+            // Quando perde o foco, formata o valor
+            input.addEventListener('blur', () => {
+                let val = parseFloat(input.value);
+                const min = parseFloat(slider.min);
+                const max = parseFloat(slider.max);
+
+                if (isNaN(val)) {
+                    // Se não é número, usa o valor atual do slider
+                    val = parseFloat(slider.value);
+                    input.value = val.toFixed(2);
+                    warning.style.display = 'none';
+                } else {
+                    // Formata com 2 casas decimais
+                    input.value = val.toFixed(2);
+
+                    if (val < min || val > max) {
+                        // Mantém o aviso se ainda estiver fora do intervalo
+                        warning.textContent = `Altera o intervalo para utilizar o valor ${val.toFixed(2)} (atual: [${min}, ${max}])`;
+                        warning.style.display = 'block';
+                    }
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    input.blur();
+                }
+            });
+        }
+
+        // Funções de conversão de coordenadas
+        function toCanvasX(x) {
+            return originX + x * scale;
+        }
+
+        function toCanvasY(y) {
+            return originY - y * scale;
+        }
+
+        // Função quadrática
+        function f(x) {
+            return a * x * x + b * x + c;
+        }
+
+        // Calcular discriminante e raízes
+        function calculateRoots() {
+            const discriminant = b * b - 4 * a * c;
+
+            if (discriminant < 0) {
+                return [];
+            } else if (discriminant === 0) {
+                const x = -b / (2 * a);
+                return [x];
+            } else {
+                const x1 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                const x2 = (-b + Math.sqrt(discriminant)) / (2 * a);
+                return [Math.min(x1, x2), Math.max(x1, x2)];
+            }
+        }
+
+        // Mostrar discriminante e raízes no painel (só após trajeto)
+        function displayRootsInfo() {
+            const discriminant = b * b - 4 * a * c;
+            document.getElementById('discriminant').textContent = discriminant.toFixed(2);
+            const roots = calculateRoots();
+            if (roots.length === 0) {
+                document.getElementById('roots').textContent = 'Sem raízes reais';
+            } else if (roots.length === 1) {
+                document.getElementById('roots').textContent = `x = ${roots[0].toFixed(2)}`;
+            } else {
+                document.getElementById('roots').innerHTML = `x<sub>1</sub> = ${roots[0].toFixed(2)}, x<sub>2</sub> = ${roots[1].toFixed(2)}`;
+            }
+        }
+
+        // Limpar discriminante e raízes do painel
+        function clearRootsInfo() {
+            document.getElementById('discriminant').textContent = '-';
+            document.getElementById('roots').textContent = '-';
+        }
+
+        // Calcular vértice
+        function calculateVertex() {
+            const xv = -b / (2 * a);
+            const yv = f(xv);
+            document.getElementById('vertex').textContent = `(${xv.toFixed(2)}, ${yv.toFixed(2)})`;
+            return { x: xv, y: yv };
+        }
+
+        // Verificar se um ponto está dentro da Lua
+        function isInsideMoon(x, y) {
+            const dx = x - moonCenterX;
+            const dy = y - moonCenterY;
+            return (dx * dx + dy * dy) < (moonRadius * moonRadius);
+        }
+
+        // Verificar se a trajetória colide com a Lua e encontrar ponto de colisão
+        function checkMoonCollision() {
+            const roots = calculateRoots();
+            if (roots.length === 0) return { collides: false, goesAround: false, collisionX: null };
+
+            const startX = Math.max(0, roots[0]);
+            const endX = roots.length > 1 ? roots[1] : roots[0];
+
+            // Verificar colisão em muitos pontos da trajetória
+            for (let x = startX; x <= endX; x += 0.02) {
+                const y = f(x);
+                if (y >= 0 && isInsideMoon(x, y)) {
+                    return { collides: true, goesAround: false, collisionX: x };
+                }
+            }
+
+            // Verificar se contorna a Lua (passa por cima)
+            const vertex = calculateVertex();
+            const moonLeft = moonCenterX - moonRadius;
+            const moonRight = moonCenterX + moonRadius;
+            const moonTop = moonCenterY + moonRadius;
+            const moonBottom = moonCenterY - moonRadius;
+
+            const trajectoryAtMoonCenter = f(moonCenterX);
+            const trajectoryAtMoonLeft = f(moonLeft);
+            const trajectoryAtMoonRight = f(moonRight);
+
+            // Verifica se a trajetória passa claramente por cima da Lua
+            const passesOverMoon = (
+                moonCenterX > startX &&
+                moonCenterX < endX &&
+                trajectoryAtMoonCenter > moonTop &&
+                trajectoryAtMoonLeft > moonBottom &&
+                trajectoryAtMoonRight > moonBottom
+            );
+
+            return { collides: false, goesAround: passesOverMoon, collisionX: null };
+        }
+
+        // Encontrar o ponto de colisão como progresso da animação (0 a 1)
+        function findCollisionProgress() {
+            const roots = calculateRoots();
+            if (roots.length === 0) return null;
+
+            const startX = 0;
+            const maxNeededX = Math.max(earthCenterX + earthRadius + 2, moonCenterX + moonRadius + 2);
+            const endX = roots.length > 1 ? Math.max(roots[1] + 1, maxNeededX) : maxNeededX;
+            const totalDistance = endX - startX;
+
+            for (let x = startX; x <= endX; x += 0.02) {
+                const y = f(x);
+                if (y >= 0 && isInsideMoon(x, y)) {
+                    return (x - startX) / totalDistance;
+                }
+            }
+            return null;
+        }
+
+        // Verificar se aterra na Terra
+        function checkEarthLanding() {
+            const roots = calculateRoots();
+            const earthLeft = earthCenterX - earthRadius;
+            const earthRight = earthCenterX + earthRadius;
+
+            document.getElementById('earthInterval').textContent = `[${earthLeft.toFixed(2)}, ${earthRight.toFixed(2)}]`;
+
+            if (roots.length === 0) {
+                return { lands: false, landingX: null };
+            }
+
+            // Verificar a segunda raiz (ponto de aterragem após subir)
+            for (const root of roots) {
+                if (root >= earthLeft && root <= earthRight && root > 0) {
+                    return { lands: true, landingX: root };
+                }
+            }
+
+            return { lands: false, landingX: roots.length > 1 ? roots[1] : roots[0] };
+        }
+
+        // Encontrar o ponto de aterragem como progresso da animação (0 a 1)
+        function findLandingProgress() {
+            const roots = calculateRoots();
+            if (roots.length < 2) return null; // Precisamos de duas raízes para uma aterragem válida
+
+            const earthLeft = earthCenterX - earthRadius;
+            const earthRight = earthCenterX + earthRadius;
+
+            const startX = 0;
+            const maxNeededX = Math.max(earthCenterX + earthRadius + 2, moonCenterX + moonRadius + 2);
+            const endX = Math.max(roots[1] + 1, maxNeededX);
+            const totalDistance = endX - startX;
+
+            // Verificar a segunda raiz (ponto de aterragem na descida)
+            // A segunda raiz é onde a nave desce depois de subir
+            const secondRoot = roots[1];
+            if (secondRoot >= earthLeft && secondRoot <= earthRight && secondRoot > 0) {
+                return (secondRoot - startX) / totalDistance;
+            }
+            return null;
+        }
+
+        // Encontrar o ponto onde a nave falha (aterra fora da Terra)
+        function findMissProgress() {
+            const roots = calculateRoots();
+            if (roots.length < 2) return null;
+
+            const earthLeft = earthCenterX - earthRadius;
+            const earthRight = earthCenterX + earthRadius;
+
+            const startX = 0;
+            const maxNeededX = Math.max(earthCenterX + earthRadius + 2, moonCenterX + moonRadius + 2);
+            const endX = Math.max(roots[1] + 1, maxNeededX);
+            const totalDistance = endX - startX;
+
+            // Se a segunda raiz está fora da Terra, é um miss
+            const secondRoot = roots[1];
+            if (secondRoot > 0 && (secondRoot < earthLeft || secondRoot > earthRight)) {
+                return (secondRoot - startX) / totalDistance;
+            }
+            return null;
+        }
+
+        // Verificar missão completa
+        function checkMission() {
+            const moonCheck = checkMoonCollision();
+            const earthCheck = checkEarthLanding();
+
+            if (moonCheck.collides) {
+                return {
+                    status: 'fail',
+                    obj1: false,
+                    obj2: false,
+                    message: 'COLISÃO! O foguetão embateu na Lua!'
+                };
+            }
+
+            const obj1Success = moonCheck.goesAround;
+
+            if (earthCheck.lands) {
+                if (moonCheck.goesAround) {
+                    return {
+                        status: 'success',
+                        obj1: true,
+                        obj2: true,
+                        message: `MISSÃO COMPLETA! Contornaste a Lua e aterraste na Terra em segurança!`
+                    };
+                } else {
+                    return {
+                        status: 'partial',
+                        obj1: false,
+                        obj2: true,
+                        message: `Aterragem bem-sucedida em x = ${earthCheck.landingX.toFixed(2)}, mas não contornaste a Lua!`
+                    };
+                }
+            } else {
+                if (moonCheck.goesAround) {
+                    return {
+                        status: 'fail',
+                        obj1: true,
+                        obj2: false,
+                        message: `Contornaste a Lua, mas falhaste a aterragem! O foguetão aterrou em x = ${earthCheck.landingX ? earthCheck.landingX.toFixed(2) : '?'}, fora da Terra.`
+                    };
+                } else {
+                    return {
+                        status: 'fail',
+                        obj1: false,
+                        obj2: false,
+                        message: 'Missão falhada! Não contornaste a Lua e não aterraste na Terra.'
+                    };
+                }
+            }
+        }
+
+        // Desenhar gráfico
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Fundo com gradiente espacial
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#0a0a2e');
+            gradient.addColorStop(1, '#1a1a4e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Desenhar estrelas no canvas do gráfico
+            for (let i = 0; i < 80; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * (originY - 50);
+                ctx.beginPath();
+                ctx.arc(x, y, Math.random() * 1.2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fill();
+            }
+
+            // Calcular limites visíveis baseados na escala atual
+            const visibleMaxX = Math.ceil((canvas.width - originX) / scale) + 1;
+            const visibleMaxY = Math.ceil((originY) / scale) + 1;
+            const visibleMinY = -Math.ceil((canvas.height - originY) / scale) - 1;
+
+            // Grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+
+            // --- BLOCO DE SUBSTITUIÇÃO ---
+
+            // 1. Definir o intervalo (step) PRIMEIRO
+            let step;
+            if (scale > 40) step = 1;       // Zoom muito perto
+            else if (scale > 20) step = 2;  // Perto
+            else if (scale > 10) step = 5;  // Médio
+            else if (scale > 5) step = 10;  // Longe
+            else step = 20;                 // Muito longe
+
+            const xInterval = step;
+            const yInterval = step;
+
+            // 2. Desenhar as linhas verticais usando o intervalo (x += xInterval)
+            for (let x = 0; x <= visibleMaxX; x += xInterval) {
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(x), 0);
+                ctx.lineTo(toCanvasX(x), canvas.height);
+                ctx.stroke();
+            }
+            // Linhas verticais negativas (até -2 ou mais, conforme necessário)
+            for (let x = -xInterval; x >= -2; x -= xInterval) {
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(x), 0);
+                ctx.lineTo(toCanvasX(x), canvas.height);
+                ctx.stroke();
+            }
+
+            // 3. Desenhar as linhas horizontais usando o intervalo (y += yInterval)
+            for (let y = 0; y <= visibleMaxY; y += yInterval) {
+                ctx.beginPath();
+                ctx.moveTo(0, toCanvasY(y));
+                ctx.lineTo(canvas.width, toCanvasY(y));
+                ctx.stroke();
+            }
+            for (let y = -yInterval; y >= visibleMinY; y -= yInterval) {
+                ctx.beginPath();
+                ctx.moveTo(0, toCanvasY(y));
+                ctx.lineTo(canvas.width, toCanvasY(y));
+                ctx.stroke();
+            }
+
+            // 4. Desenhar Eixos Principais (X e Y)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+
+            // Eixo X
+            ctx.beginPath();
+            ctx.moveTo(0, originY);
+            ctx.lineTo(canvas.width, originY);
+            ctx.stroke();
+
+            // Eixo Y
+            ctx.beginPath();
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, canvas.height);
+            ctx.stroke();
+
+            // 5. Desenhar Números
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+
+            // Números no Eixo X (usando o mesmo intervalo) - mais visíveis
+            ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+            for (let x = 0; x <= visibleMaxX; x += xInterval) {
+                ctx.fillText(x.toString(), toCanvasX(x), originY + 18);
+            }
+
+            // Números no Eixo Y (usando o mesmo intervalo)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.textAlign = 'right';
+            for (let y = yInterval; y <= visibleMaxY; y += yInterval) {
+                ctx.fillText(y.toString(), originX - 8, toCanvasY(y) + 4);
+            }
+            for (let y = -yInterval; y >= visibleMinY; y -= yInterval) {
+                ctx.fillText(y.toString(), originX - 8, toCanvasY(y) + 4);
+            }
+
+            // Desenhar Lua
+            const moonCanvasX = toCanvasX(moonCenterX);
+            const moonCanvasY = toCanvasY(moonCenterY);
+            const moonCanvasRadius = moonRadius * scale;
+
+            // Sombra da Lua
+            ctx.beginPath();
+            ctx.arc(moonCanvasX + 3, moonCanvasY + 3, moonCanvasRadius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fill();
+
+            // Lua
+            const moonGradient = ctx.createRadialGradient(
+                moonCanvasX - moonCanvasRadius * 0.3,
+                moonCanvasY - moonCanvasRadius * 0.3,
+                0,
+                moonCanvasX, moonCanvasY, moonCanvasRadius
+            );
+            moonGradient.addColorStop(0, '#f5f5f5');
+            moonGradient.addColorStop(0.5, '#e5e5e5');
+            moonGradient.addColorStop(1, '#9ca3af');
+
+            ctx.beginPath();
+            ctx.arc(moonCanvasX, moonCanvasY, moonCanvasRadius, 0, Math.PI * 2);
+            ctx.fillStyle = moonGradient;
+            ctx.fill();
+
+            // Crateras da Lua
+            ctx.fillStyle = 'rgba(156, 163, 175, 0.5)';
+            ctx.beginPath();
+            ctx.arc(moonCanvasX - moonCanvasRadius * 0.3, moonCanvasY - moonCanvasRadius * 0.2, moonCanvasRadius * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(moonCanvasX + moonCanvasRadius * 0.2, moonCanvasY + moonCanvasRadius * 0.3, moonCanvasRadius * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(moonCanvasX + moonCanvasRadius * 0.4, moonCanvasY - moonCanvasRadius * 0.4, moonCanvasRadius * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Contorno da Lua
+            ctx.strokeStyle = '#d1d5db';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Label da Lua
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('LUA', moonCanvasX, moonCanvasY + moonCanvasRadius + 18);
+
+            // Terra (círculo mais realista)
+            const earthLeft = earthCenterX - earthRadius;
+            const earthRight = earthCenterX + earthRadius;
+            const earthCanvasX = toCanvasX(earthCenterX);
+            const earthCanvasRadius = earthRadius * scale;
+            // Centro da Terra posicionado de forma a mostrar a maior parte do planeta
+            const earthCanvasY = originY + earthCanvasRadius * 0.3;
+
+            // Zona de aterragem (no eixo X = 0) - lógica mantida, visual oculto
+            // ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+            // ctx.fillRect(toCanvasX(earthLeft), originY - 5, earthRadius * 2 * scale, 10);
+
+            // Desenhar a Terra usando imagem com Clipping Mask
+            if (earthImageLoaded) {
+                // 1. Guardar o estado do canvas
+                ctx.save();
+
+                // 2. Criar o caminho circular (máscara de recorte)
+                ctx.beginPath();
+                ctx.arc(earthCanvasX, earthCanvasY, earthCanvasRadius, 0, Math.PI * 2);
+                ctx.clip();
+
+                // 3. Desenhar a imagem dentro da máscara circular
+                // A imagem preenche todo o círculo
+                const imgSize = earthCanvasRadius * 2;
+                ctx.drawImage(
+                    earthImage,
+                    earthCanvasX - earthCanvasRadius,
+                    earthCanvasY - earthCanvasRadius,
+                    imgSize,
+                    imgSize
+                );
+
+                // 4. Restaurar o estado (remove o clip)
+                ctx.restore();
+
+                // 5. Contorno da Terra
+                ctx.beginPath();
+                ctx.arc(earthCanvasX, earthCanvasY, earthCanvasRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = '#60a5fa';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // 6. Atmosfera (brilho exterior) - efeito profissional por cima
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(earthCanvasX, earthCanvasY, earthCanvasRadius * 1.15, 0, Math.PI * 2);
+                const atmosphereGradient = ctx.createRadialGradient(
+                    earthCanvasX, earthCanvasY, earthCanvasRadius * 0.9,
+                    earthCanvasX, earthCanvasY, earthCanvasRadius * 1.15
+                );
+                atmosphereGradient.addColorStop(0, 'rgba(100, 180, 255, 0.4)');
+                atmosphereGradient.addColorStop(0.5, 'rgba(100, 180, 255, 0.2)');
+                atmosphereGradient.addColorStop(1, 'rgba(100, 180, 255, 0)');
+                ctx.fillStyle = atmosphereGradient;
+                ctx.fill();
+                ctx.restore();
+
+                // 7. Brilho especular (reflexo de luz) para acabamento profissional
+                ctx.beginPath();
+                ctx.arc(earthCanvasX - earthCanvasRadius * 0.35, earthCanvasY - earthCanvasRadius * 0.35, earthCanvasRadius * 0.25, 0, Math.PI * 2);
+                const specularGradient = ctx.createRadialGradient(
+                    earthCanvasX - earthCanvasRadius * 0.35, earthCanvasY - earthCanvasRadius * 0.35, 0,
+                    earthCanvasX - earthCanvasRadius * 0.35, earthCanvasY - earthCanvasRadius * 0.35, earthCanvasRadius * 0.25
+                );
+                specularGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+                specularGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = specularGradient;
+                ctx.fill();
+            } else {
+                // Fallback: desenhar um círculo azul simples enquanto a imagem carrega
+                ctx.beginPath();
+                ctx.arc(earthCanvasX, earthCanvasY, earthCanvasRadius, 0, Math.PI * 2);
+                ctx.fillStyle = '#3b82f6';
+                ctx.fill();
+                ctx.strokeStyle = '#60a5fa';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // Label da Terra
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('TERRA', earthCanvasX, earthCanvasY + earthCanvasRadius + 18);
+
+            // Só desenhar trajetória e elementos relacionados se já lançou
+            if (hasLaunched) {
+                const roots = calculateRoots();
+                const startX = 0;
+                // Calcular limite dinamicamente - ir até à segunda raiz + margem, ou até à Terra + margem
+                const maxNeededX = Math.max(earthCenterX + earthRadius + 2, moonCenterX + moonRadius + 2);
+                const endXFull = roots.length > 1 ? Math.max(roots[1] + 1, maxNeededX) : maxNeededX;
+
+                // Se está a animar, desenhar apenas até o ponto atual
+                // Se houve colisão, limitar ao ponto de colisão
+                // Se houve aterragem, limitar ao ponto de aterragem
+                let maxProgress = animationProgress;
+                if (collisionPoint !== null && animationProgress >= collisionPoint) {
+                    maxProgress = collisionPoint;
+                }
+                if (landingPoint !== null) {
+                    maxProgress = landingPoint;
+                }
+
+                // Durante miss animation, desenhar trajetória completa
+                const endX = isAnimating ? startX + (endXFull - startX) * maxProgress :
+                             (collisionPoint !== null ? startX + (endXFull - startX) * collisionPoint :
+                             (landingPoint !== null ? startX + (endXFull - startX) * landingPoint :
+                             (missPoint !== null ? endXFull : endXFull)));
+
+                ctx.beginPath();
+                ctx.strokeStyle = '#f97316';
+                ctx.lineWidth = 3;
+
+                let firstPoint = true;
+                for (let x = startX; x <= endX; x += 0.05) {
+                    const y = f(x);
+                    if (y < -2) continue;
+
+                    const canvasX = toCanvasX(x);
+                    const canvasY = toCanvasY(y);
+
+                    if (firstPoint) {
+                        ctx.moveTo(canvasX, canvasY);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(canvasX, canvasY);
+                    }
+                }
+                ctx.stroke();
+
+                // Desenhar foguetão ou animação de aterragem
+                if (landingPoint !== null && (isLanding || landingAnimationProgress > 0)) {
+                    // Aterragem em progresso ou concluída
+                    const landingX = startX + (endXFull - startX) * landingPoint;
+                    const canvasLandingX = toCanvasX(landingX);
+                    const landingGraphY = f(landingX);
+                    const startCanvasY = toCanvasY(landingGraphY);
+
+                    if (landingAnimationProgress >= 1) {
+                        // Aterragem concluída - mostrar foguetão pousado
+                        drawLandedRocket(canvasLandingX, isPartialLanding);
+                        drawLandingAnimation(canvasLandingX, landingAnimationProgress, startCanvasY, isPartialLanding);
+                    } else {
+                        // Durante a aterragem - animar descida
+                        const landingY = drawLandingAnimation(canvasLandingX, landingAnimationProgress, startCanvasY, isPartialLanding);
+                        drawRocket(canvasLandingX, landingY, landingX);
+                    }
+                } else if (missPoint !== null && (isMissing || missAnimationProgress > 0)) {
+                    // Animação de falha (nave perdida no espaço)
+                    const missX = startX + (endXFull - startX) * missPoint;
+                    const canvasMissX = toCanvasX(missX);
+                    const missGraphY = f(missX);
+                    const canvasMissY = toCanvasY(missGraphY);
+
+                    drawMissAnimation(canvasMissX, canvasMissY, missAnimationProgress, missX);
+                } else if (!isLanding && !isMissing) {
+                    // Voo normal
+                    let rocketProgress = isAnimating ? maxProgress : (collisionPoint !== null ? collisionPoint : (missPoint !== null ? missPoint : 1));
+                    const rocketX = startX + (endXFull - startX) * rocketProgress;
+                    const rocketY = f(rocketX);
+                    if (rocketY >= -1) {
+                        drawRocket(toCanvasX(rocketX), toCanvasY(rocketY), rocketX);
+                    }
+                }
+
+                // Desenhar vértice (só se não houve colisão/aterragem antes do vértice)
+                // Mostrar durante miss animation
+                const vertex = calculateVertex();
+                const vertexProgress = (vertex.x - startX) / (endXFull - startX);
+                if (vertex.y > 0 && !isAnimating && !isLanding &&
+                    (collisionPoint === null || vertexProgress < collisionPoint) &&
+                    (landingPoint === null || vertexProgress < landingPoint)) {
+                    ctx.beginPath();
+                    ctx.arc(toCanvasX(vertex.x), toCanvasY(vertex.y), 5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.fill();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Marcar raízes (mostrar durante miss animation também)
+                if (!isAnimating && !isLanding && collisionPoint === null && landingPoint === null) {
+                    roots.forEach(root => {
+                        if (root >= 0 && root <= endXFull) {
+                            const isOnEarth = root >= earthLeft && root <= earthRight;
+                            ctx.beginPath();
+                            ctx.arc(toCanvasX(root), originY, 7, 0, Math.PI * 2);
+                            ctx.fillStyle = isOnEarth ? '#22c55e' : '#ef4444';
+                            ctx.fill();
+                            ctx.strokeStyle = 'white';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+                    });
+                }
+
+                // Marcar ponto de aterragem se houver
+                if (landingPoint !== null && !isAnimating && !isLanding) {
+                    const landingX = startX + (endXFull - startX) * landingPoint;
+                    ctx.beginPath();
+                    ctx.arc(toCanvasX(landingX), originY, 7, 0, Math.PI * 2);
+                    ctx.fillStyle = '#22c55e';
+                    ctx.fill();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Marcar ponto de falha se houver (e animação terminou)
+                if (missPoint !== null && !isAnimating && !isMissing) {
+                    const missXCoord = startX + (endXFull - startX) * missPoint;
+                    ctx.beginPath();
+                    ctx.arc(toCanvasX(missXCoord), originY, 7, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fill();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Desenhar explosão se houve colisão
+                if (collisionPoint !== null && !isAnimating) {
+                    const explosionX = startX + (endXFull - startX) * collisionPoint;
+                    const explosionY = f(explosionX);
+                    drawExplosion(toCanvasX(explosionX), toCanvasY(explosionY));
+                }
+            } else {
+                // Antes do lançamento, mostrar foguetão na posição inicial
+                const rocketY = f(0);
+                if (rocketY >= -1) {
+                    drawRocket(toCanvasX(0), toCanvasY(rocketY), 0);
+                }
+            }
+        }
+
+        // Desenhar explosão
+        function drawExplosion(x, y) {
+            // Círculos de explosão
+            const colors = ['#ff6b35', '#f7c59f', '#ffaa00', '#ff5500'];
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.arc(x, y, 25 - i * 5, 0, Math.PI * 2);
+                ctx.fillStyle = colors[i];
+                ctx.globalAlpha = 0.7 - i * 0.15;
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            // Partículas
+            ctx.fillStyle = '#ffaa00';
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const dist = 30;
+                ctx.beginPath();
+                ctx.arc(x + Math.cos(angle) * dist, y + Math.sin(angle) * dist, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Desenhar animação de aterragem segura
+        function drawLandingAnimation(x, progress, startCanvasY, partial = false) {
+            const earthCanvasRadius = earthRadius * scale;
+            const earthCanvasY = originY + earthCanvasRadius * 0.3;
+
+            // Cores baseadas no tipo de sucesso
+            const mainColor = partial ? 'rgba(251, 191, 36' : 'rgba(34, 197, 94'; // Amarelo ou Verde
+            const textColor = partial ? '#fbbf24' : '#22c55e';
+            const message = partial ? 'MISSÃO PARCIALMENTE CONCLUÍDA' : 'ATERRAGEM SEGURA!';
+
+            // Posição Y da nave durante a aterragem (desce suavemente)
+            const startY = startCanvasY !== undefined ? startCanvasY : toCanvasY(0);
+            const endY = originY - 15;
+            const currentY = startY + (endY - startY) * Math.min(progress, 1);
+
+            // Partículas de sucesso (estrelas/brilhos)
+            if (progress >= 0.5) {
+                const particleProgress = (progress - 0.5) * 2;
+                ctx.save();
+
+                // Brilho central
+                const glowSize = 40 + particleProgress * 30;
+                const glowGradient = ctx.createRadialGradient(x, currentY, 0, x, currentY, glowSize);
+                glowGradient.addColorStop(0, mainColor + ', 0.6)');
+                glowGradient.addColorStop(0.5, mainColor + ', 0.3)');
+                glowGradient.addColorStop(1, mainColor + ', 0)');
+                ctx.fillStyle = glowGradient;
+                ctx.beginPath();
+                ctx.arc(x, currentY, glowSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Estrelas de celebração
+                ctx.fillStyle = partial ? '#f97316' : '#fbbf24'; // Laranja para parcial, amarelo para sucesso
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2 + progress * 2;
+                    const dist = 35 + particleProgress * 25;
+                    const starX = x + Math.cos(angle) * dist;
+                    const starY = currentY + Math.sin(angle) * dist * 0.6;
+                    const starSize = 3 + Math.sin(progress * 10 + i) * 1.5;
+
+                    // Desenhar estrela de 4 pontas
+                    ctx.beginPath();
+                    ctx.moveTo(starX, starY - starSize);
+                    ctx.lineTo(starX + starSize * 0.3, starY);
+                    ctx.lineTo(starX, starY + starSize);
+                    ctx.lineTo(starX - starSize * 0.3, starY);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(starX - starSize, starY);
+                    ctx.lineTo(starX, starY + starSize * 0.3);
+                    ctx.lineTo(starX + starSize, starY);
+                    ctx.lineTo(starX, starY - starSize * 0.3);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Círculos de onda
+                ctx.strokeStyle = mainColor + ', 0.5)';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 3; i++) {
+                    const waveProgress = (particleProgress + i * 0.3) % 1;
+                    const waveRadius = 20 + waveProgress * 50;
+                    ctx.globalAlpha = 1 - waveProgress;
+                    ctx.beginPath();
+                    ctx.arc(x, originY, waveRadius, Math.PI, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.globalAlpha = 1;
+
+                ctx.restore();
+            }
+
+            // Texto de sucesso/parcial
+            if (progress >= 0.8) {
+                const textOpacity = Math.min((progress - 0.8) * 5, 1);
+                ctx.save();
+                ctx.globalAlpha = textOpacity;
+                ctx.fillStyle = textColor;
+                ctx.font = partial ? 'bold 18px Arial' : 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(message, x, currentY - 60);
+
+                // Sombra do texto
+                ctx.fillStyle = mainColor + ', 0.3)';
+                ctx.fillText(message, x + 2, currentY - 58);
+                ctx.restore();
+            }
+
+            return currentY;
+        }
+
+        // Desenhar animação de falha (nave perdida no espaço)
+        function drawMissAnimation(x, y, progress, graphX) {
+            // A nave continua a voar mas começa a rodar descontroladamente
+            // e eventualmente flutua para fora do ecrã
+
+            const derivative = 2 * a * graphX + b;
+            const baseAngle = -Math.atan(derivative) + Math.PI / 2;
+
+            // Rotação cada vez mais rápida (efeito de descontrolo)
+            const spinSpeed = progress * progress * 15; // Acelera exponencialmente
+            const spinAngle = baseAngle + spinSpeed;
+
+            // A nave flutua para cima e para a direita (perdida no espaço)
+            const floatX = x + progress * 100;
+            const floatY = y - progress * progress * 150; // Sobe cada vez mais rápido
+
+            // A nave fica cada vez mais pequena (afasta-se)
+            const rocketScale = Math.max(0.1, 1 - progress * 0.8);
+
+            // Opacidade diminui no final
+            const opacity = Math.max(0, 1 - progress * 0.5);
+
+            ctx.save();
+            ctx.globalAlpha = opacity;
+
+            // Desenhar rastro de fumo/confusão
+            if (progress < 0.8) {
+                for (let i = 0; i < 5; i++) {
+                    const trailProgress = Math.max(0, progress - i * 0.05);
+                    const trailX = x + trailProgress * 100 + Math.sin(trailProgress * 20 + i) * 10;
+                    const trailY = y - trailProgress * trailProgress * 150 + Math.cos(trailProgress * 15 + i) * 8;
+                    const trailSize = (5 - i) * 3 * (1 - trailProgress);
+                    const trailOpacity = 0.3 * (1 - trailProgress);
+
+                    ctx.beginPath();
+                    ctx.arc(trailX, trailY, trailSize, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(200, 200, 200, ${trailOpacity})`;
+                    ctx.fill();
+                }
+            }
+
+            // Desenhar a nave a rodar
+            drawRocket(floatX, floatY, graphX, spinAngle, rocketScale);
+
+            ctx.restore();
+
+            // Texto de falha
+            if (progress >= 0.3) {
+                const textOpacity = Math.min((progress - 0.3) * 2, 1);
+                ctx.save();
+                ctx.globalAlpha = textOpacity;
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+
+                // Texto com efeito de "flutuação"
+                const textY = y - 80 + Math.sin(progress * 10) * 5;
+                ctx.fillText('QUEDA CATASTRÓFICA!', x + 50, textY);
+
+                // Desenhar estrelas a piscar ao redor do texto
+                ctx.fillStyle = '#fbbf24';
+                for (let i = 0; i < 6; i++) {
+                    const starAngle = (i / 6) * Math.PI * 2 + progress * 3;
+                    const starDist = 70 + Math.sin(progress * 8 + i) * 10;
+                    const starX = x + 50 + Math.cos(starAngle) * starDist;
+                    const starY = textY + 10 + Math.sin(starAngle) * 25;
+                    const starSize = 3 + Math.sin(progress * 12 + i * 2) * 1.5;
+
+                    ctx.beginPath();
+                    ctx.arc(starX, starY, starSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+
+            return { x: floatX, y: floatY };
+        }
+
+        // Desenhar foguetão pousado
+        function drawLandedRocket(x, partial = false) {
+            ctx.save();
+            ctx.translate(x, originY - 18);
+
+            // Cor baseada no tipo de sucesso (amarelo para parcial, verde para completo)
+            const accentColor = partial ? '#fbbf24' : '#22c55e';
+
+            // Corpo
+            ctx.fillStyle = '#e5e7eb';
+            ctx.beginPath();
+            ctx.moveTo(0, -18);
+            ctx.lineTo(-7, 9);
+            ctx.lineTo(7, 9);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#9ca3af';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Ponta
+            ctx.fillStyle = accentColor;
+            ctx.beginPath();
+            ctx.moveTo(0, -18);
+            ctx.lineTo(-4, -9);
+            ctx.lineTo(4, -9);
+            ctx.closePath();
+            ctx.fill();
+
+            // Janela
+            ctx.fillStyle = '#60a5fa';
+            ctx.beginPath();
+            ctx.arc(0, -4, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Asas
+            ctx.fillStyle = accentColor;
+            ctx.beginPath();
+            ctx.moveTo(-7, 9);
+            ctx.lineTo(-13, 16);
+            ctx.lineTo(-7, 4);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(7, 9);
+            ctx.lineTo(13, 16);
+            ctx.lineTo(7, 4);
+            ctx.closePath();
+            ctx.fill();
+
+            // Pernas de pouso
+            ctx.strokeStyle = '#6b7280';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-5, 9);
+            ctx.lineTo(-10, 18);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(5, 9);
+            ctx.lineTo(10, 18);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // Desenhar foguetão
+        function drawRocket(x, y, graphX, overrideRotation = null, rocketScale = 1) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(rocketScale, rocketScale);
+
+            let rotationAngle;
+            if (overrideRotation !== null) {
+                rotationAngle = overrideRotation;
+            } else {
+                const derivative = 2 * a * graphX + b;
+                const angle = Math.atan(derivative);
+                rotationAngle = -angle + Math.PI / 2;
+            }
+            ctx.rotate(rotationAngle);
+
+            // Corpo
+            ctx.fillStyle = '#e5e7eb';
+            ctx.beginPath();
+            ctx.moveTo(0, -18);
+            ctx.lineTo(-7, 9);
+            ctx.lineTo(7, 9);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#9ca3af';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Ponta
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(0, -18);
+            ctx.lineTo(-4, -9);
+            ctx.lineTo(4, -9);
+            ctx.closePath();
+            ctx.fill();
+
+            // Janela
+            ctx.fillStyle = '#60a5fa';
+            ctx.beginPath();
+            ctx.arc(0, -4, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Asas
+            ctx.fillStyle = '#f97316';
+            ctx.beginPath();
+            ctx.moveTo(-7, 9);
+            ctx.lineTo(-13, 16);
+            ctx.lineTo(-7, 4);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(7, 9);
+            ctx.lineTo(13, 16);
+            ctx.lineTo(7, 4);
+            ctx.closePath();
+            ctx.fill();
+
+            // Chama
+            if (isAnimating) {
+                ctx.fillStyle = '#fbbf24';
+                ctx.beginPath();
+                ctx.moveTo(-4, 9);
+                ctx.lineTo(0, 22 + Math.random() * 8);
+                ctx.lineTo(4, 9);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#f97316';
+                ctx.beginPath();
+                ctx.moveTo(-2.5, 9);
+                ctx.lineTo(0, 16 + Math.random() * 4);
+                ctx.lineTo(2.5, 9);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        // Animação
+        function animate() {
+            if (!isAnimating && !isLanding && !isMissing) return;
+
+            if (isLanding) {
+                // Animação de aterragem
+                landingAnimationProgress += 0.015;
+
+                if (landingAnimationProgress >= 1.5) {
+                    landingAnimationProgress = 1.5;
+                    isLanding = false;
+                    // Mostrar modal de resultado
+                    setTimeout(() => {
+                        showResultModal(missionResult.obj1, missionResult.obj2, missionResult.message, missionResult.obj1 && missionResult.obj2);
+                    }, 300);
+                }
+
+                draw();
+
+                if (isLanding) {
+                    animationId = requestAnimationFrame(animate);
+                }
+                return;
+            }
+
+            if (isMissing) {
+                // Animação de nave perdida no espaço
+                missAnimationProgress += 0.008;
+
+                if (missAnimationProgress >= 1.5) {
+                    missAnimationProgress = 1.5;
+                    isMissing = false;
+                    // Mostrar modal de resultado
+                    setTimeout(() => {
+                        showResultModal(missionResult.obj1, missionResult.obj2, missionResult.message, false);
+                    }, 300);
+                }
+
+                draw();
+
+                if (isMissing) {
+                    animationId = requestAnimationFrame(animate);
+                }
+                return;
+            }
+
+            // Ajustar velocidade da animação baseado na curvatura (|a|)
+            // Quando |a| é pequeno, a parábola é mais larga e a animação deve ser mais lenta
+            const absA = Math.abs(a);
+            let animationSpeed;
+            if (absA >= 1) {
+                // Curvatura alta - velocidade lenta
+                animationSpeed = 0.002;
+            } else if (absA >= 0.5) {
+                // Curvatura média
+                animationSpeed = 0.003;
+            } else if (absA >= 0.2) {
+                // Curvatura pequena
+                animationSpeed = 0.004;
+            } else {
+                // Curvatura muito pequena - mais lento ainda
+                animationSpeed = 0.005;
+            }
+            animationProgress += animationSpeed;
+
+            // Verificar colisão durante a animação
+            if (collisionPoint === null && landingPoint === null) {
+                const collision = findCollisionProgress();
+                if (collision !== null && animationProgress >= collision) {
+                    collisionPoint = collision;
+                    animationProgress = collision;
+                    isAnimating = false;
+                    displayRootsInfo();
+
+                    // Registar resultado de colisão
+                    missionResult = {
+                        obj1: false,
+                        obj2: false,
+                        message: 'COLISÃO! O foguetão embateu na Lua!'
+                    };
+
+                    draw();
+                    // Mostrar modal após breve pausa
+                    setTimeout(() => {
+                        showResultModal(missionResult.obj1, missionResult.obj2, missionResult.message, false);
+                    }, 500);
+                    return;
+                }
+            }
+
+            // Verificar aterragem durante a animação
+            if (landingPoint === null && collisionPoint === null && missPoint === null) {
+                const moonCheck = checkMoonCollision();
+                const landing = findLandingProgress();
+
+                // Verificar se aterra na Terra (com ou sem contornar a Lua)
+                if (landing !== null && animationProgress >= landing) {
+                    landingPoint = landing;
+                    animationProgress = landing;
+                    isAnimating = false;
+                    isLanding = true;
+                    landingAnimationProgress = 0;
+                    displayRootsInfo();
+
+                    const earthCheck = checkEarthLanding();
+
+                    if (moonCheck.goesAround) {
+                        // Sucesso completo - contornou a Lua e aterrou na Terra
+                        isPartialLanding = false;
+                        missionResult = {
+                            obj1: true,
+                            obj2: true,
+                            message: `Contornaste a Lua e aterraste na Terra em x = ${earthCheck.landingX.toFixed(2)}!`
+                        };
+                    } else {
+                        // Sucesso parcial - aterrou na Terra mas não contornou a Lua
+                        isPartialLanding = true;
+                        missionResult = {
+                            obj1: false,
+                            obj2: true,
+                            message: `Aterraste na Terra em x = ${earthCheck.landingX.toFixed(2)}, mas não contornaste a Lua!`
+                        };
+                    }
+
+                    // Continuar com animação de aterragem
+                    animationId = requestAnimationFrame(animate);
+                    return;
+                }
+
+                // Verificar se a nave vai falhar (aterrar fora da Terra)
+                const miss = findMissProgress();
+                if (miss !== null && animationProgress >= miss) {
+                    missPoint = miss;
+                    animationProgress = miss;
+                    isAnimating = false;
+                    isMissing = true;
+                    missAnimationProgress = 0;
+                    displayRootsInfo();
+
+                    // Registar resultado de falha
+                    const roots = calculateRoots();
+                    const missX = roots.length > 1 ? roots[1].toFixed(2) : '?';
+
+                    missionResult = {
+                        obj1: moonCheck.goesAround,
+                        obj2: false,
+                        message: `Falhaste a aterragem! A nave aterrou em x = ${missX}, fora da Terra!`
+                    };
+
+                    // Continuar com animação de falha
+                    animationId = requestAnimationFrame(animate);
+                    return;
+                }
+            }
+
+            if (animationProgress >= 1) {
+                animationProgress = 1;
+                isAnimating = false;
+                displayRootsInfo();
+
+                const result = checkMission();
+                missionResult = {
+                    obj1: result.obj1,
+                    obj2: result.obj2,
+                    message: result.message
+                };
+
+                if (result.status === 'fail') {
+                    // Verificar se deve iniciar animação de miss
+                    const miss = findMissProgress();
+                    if (miss !== null && missPoint === null && !result.message.includes('embateu')) {
+                        missPoint = miss;
+                        isMissing = true;
+                        missAnimationProgress = 0;
+                        animationId = requestAnimationFrame(animate);
+                        draw();
+                        return;
+                    }
+                }
+
+                // Mostrar modal de resultado
+                setTimeout(() => {
+                    showResultModal(missionResult.obj1, missionResult.obj2, missionResult.message, result.status === 'success');
+                }, 500);
+            }
+
+            draw();
+
+            if (isAnimating) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        // Função de atualização principal
+        function updateFromControls() {
+            a = parseFloat(paramA.value);
+            b = parseFloat(paramB.value);
+            c = parseFloat(paramC.value);
+            moonCenterX = parseFloat(inputMoonX.value);
+            moonCenterY = parseFloat(inputMoonY.value);
+            moonRadius = parseFloat(moonRadiusSlider.value);
+            earthCenterX = parseFloat(earthXSlider.value);
+            earthRadius = parseFloat(earthRadiusSlider.value);
+
+            // Validação do parâmetro a - só permite valores negativos
+            const paramAWarning = document.getElementById('paramA_warning');
+            if (a >= 0) {
+                a = lastValidA;
+                paramA.value = lastValidA;
+                inputA.value = lastValidA.toFixed(2);
+                paramAWarning.textContent = 'O parâmetro "a" só pode ter valores negativos';
+                paramAWarning.style.display = 'block';
+            } else {
+                lastValidA = a;
+                paramAWarning.style.display = 'none';
+            }
+
+            // Validação do parâmetro b - só permite valores positivos
+            const paramBWarning = document.getElementById('paramB_warning');
+            if (b < 0) {
+                b = lastValidB;
+                paramB.value = lastValidB;
+                inputB.value = lastValidB.toFixed(2);
+                paramBWarning.textContent = 'O parâmetro "b" só pode ter valores positivos';
+                paramBWarning.style.display = 'block';
+            } else {
+                lastValidB = b;
+                paramBWarning.style.display = 'none';
+            }
+
+            // Validação da Lua - garantir que fica no primeiro quadrante
+            const moonXWarning = document.getElementById('moonX_warning');
+            const moonYWarning = document.getElementById('moonY_warning');
+
+            // Lua deve estar completamente no primeiro quadrante (X > 0)
+            const minMoonX = moonRadius;
+            if (moonCenterX < minMoonX) {
+                moonCenterX = minMoonX;
+                inputMoonX.value = minMoonX.toFixed(2);
+                moonXWarning.textContent = `Mínimo: ${minMoonX.toFixed(2)} (para não abranger valores negativos)`;
+                moonXWarning.style.display = 'block';
+            } else {
+                moonXWarning.style.display = 'none';
+            }
+
+            // Lua deve estar completamente no primeiro quadrante (Y > 0)
+            const minMoonY = moonRadius;
+            if (moonCenterY < minMoonY) {
+                moonCenterY = minMoonY;
+                inputMoonY.value = minMoonY.toFixed(2);
+                moonYWarning.textContent = `Mínimo: ${minMoonY.toFixed(2)} (para não abranger valores negativos)`;
+                moonYWarning.style.display = 'block';
+            } else {
+                moonYWarning.style.display = 'none';
+            }
+
+            // Lua deve ficar à esquerda da Terra
+            const maxMoonX = earthCenterX - earthRadius - moonRadius - 0.1;
+            if (moonCenterX > maxMoonX) {
+                moonCenterX = maxMoonX;
+                inputMoonX.value = maxMoonX.toFixed(2);
+                moonXWarning.textContent = `Máximo: ${maxMoonX.toFixed(2)} (Lua deve ficar à esquerda da Terra)`;
+                moonXWarning.style.display = 'block';
+            }
+
+            // Garantir que o intervalo da Terra não abranja valores negativos
+            const minEarthX = earthRadius;
+            if (earthCenterX < minEarthX) {
+                earthCenterX = minEarthX;
+                earthXSlider.value = minEarthX;
+                inputEarthX.value = minEarthX.toFixed(2);
+            }
+
+            // Atualizar o mínimo do slider da Terra dinamicamente
+            const requiredMin = earthRadius;
+            if (parseFloat(earthXSlider.min) < requiredMin) {
+                earthXSlider.min = requiredMin;
+                document.getElementById('earthX_min').value = requiredMin.toFixed(2);
+            }
+
+            aDisplay.textContent = parseFloat(a).toFixed(2);
+            bDisplay.textContent = parseFloat(b).toFixed(2);
+            cDisplay.textContent = parseFloat(c).toFixed(2);
+
+            // Recalcular escala dinâmica
+            calculateDynamicScale();
+
+            // Esconder trajetória quando parâmetros mudam
+            if (hasLaunched && !isAnimating && !isLanding && !isMissing) {
+                hasLaunched = false;
+                collisionPoint = null;
+                landingPoint = null;
+                landingAnimationProgress = 0;
+                missPoint = null;
+                missAnimationProgress = 0;
+                isPartialLanding = false;
+                missionResult = { obj1: false, obj2: false, message: '' };
+            }
+
+            calculateVertex();
+            calculateRoots();
+            clearRootsInfo();
+
+            // Atualizar intervalo da Terra em tempo real
+            const earthLeft = earthCenterX - earthRadius;
+            const earthRight = earthCenterX + earthRadius;
+            document.getElementById('earthInterval').textContent = `[${earthLeft.toFixed(2)}, ${earthRight.toFixed(2)}]`;
+
+            if (!isAnimating) {
+                draw();
+            }
+        }
+
+        // Função para sincronizar intervalos min/max em tempo real (estilo GeoGebra)
+        function bindRangeControls(sliderId, valueInputId, minInputId, maxInputId, warningId, validator) {
+            const slider = document.getElementById(sliderId);
+            const valueInput = document.getElementById(valueInputId);
+            const minInput = document.getElementById(minInputId);
+            const maxInput = document.getElementById(maxInputId);
+            const warning = warningId ? document.getElementById(warningId) : null;
+
+            // Guardar valores anteriores válidos
+            let lastValidMin = parseFloat(minInput.value);
+            let lastValidMax = parseFloat(maxInput.value);
+
+            function updateRange() {
+                const newMin = parseFloat(minInput.value);
+                const newMax = parseFloat(maxInput.value);
+
+                // Verificar se min < max
+                if (!isNaN(newMin) && !isNaN(newMax) && newMin >= newMax) {
+                    if (warning) {
+                        warning.textContent = 'O valor mínimo tem de ser menor que o valor máximo';
+                        warning.style.display = 'block';
+                    }
+                    // Restaurar valores anteriores
+                    minInput.value = lastValidMin;
+                    maxInput.value = lastValidMax;
+                    return;
+                }
+
+                // Validação customizada (se existir)
+                if (validator && warning) {
+                    const validationResult = validator(newMin, newMax);
+                    if (!validationResult.valid) {
+                        warning.textContent = validationResult.message;
+                        warning.style.display = 'block';
+                        // Restaurar valores anteriores
+                        minInput.value = lastValidMin;
+                        maxInput.value = lastValidMax;
+                        return;
+                    } else {
+                        warning.style.display = 'none';
+                    }
+                } else if (warning) {
+                    warning.style.display = 'none';
+                }
+
+                if (!isNaN(newMin) && !isNaN(newMax) && newMin < newMax) {
+                    // Atualizar valores anteriores válidos
+                    lastValidMin = newMin;
+                    lastValidMax = newMax;
+
+                    slider.min = newMin;
+                    slider.max = newMax;
+                    valueInput.min = newMin;
+                    valueInput.max = newMax;
+
+                    // Ajustar valor atual se estiver fora do novo intervalo
+                    let currentVal = parseFloat(slider.value);
+                    if (currentVal < newMin) {
+                        slider.value = newMin;
+                        valueInput.value = newMin.toFixed(2);
+                        updateFromControls();
+                    } else if (currentVal > newMax) {
+                        slider.value = newMax;
+                        valueInput.value = newMax.toFixed(2);
+                        updateFromControls();
+                    }
+                    draw();
+                }
+            }
+
+            minInput.addEventListener('input', updateRange);
+            minInput.addEventListener('change', updateRange);
+            maxInput.addEventListener('input', updateRange);
+            maxInput.addEventListener('change', updateRange);
+        }
+
+        // Validador para o parâmetro 'a' - só permite valores negativos
+        function validateParamA(min, max) {
+            if (max > 0) {
+                return { valid: false, message: 'O parâmetro "a" só pode ter valores negativos' };
+            }
+            if (min >= 0) {
+                return { valid: false, message: 'O parâmetro "a" só pode ter valores negativos' };
+            }
+            return { valid: true };
+        }
+
+        // Validador para o parâmetro 'b' - só permite valores positivos
+        function validateParamB(min, max) {
+            if (min < 0) {
+                return { valid: false, message: 'O parâmetro "b" só pode ter valores positivos' };
+            }
+            if (max <= 0) {
+                return { valid: false, message: 'O parâmetro "b" só pode ter valores positivos' };
+            }
+            return { valid: true };
+        }
+
+        // Validador para o centro da Terra - deve estar no eixo X positivo e não abranger negativos
+        function validateEarthX(min, max) {
+            const currentEarthRadius = parseFloat(earthRadiusSlider.value);
+            // O mínimo do centro da Terra deve garantir que o intervalo não abranja negativos
+            if (min < currentEarthRadius) {
+                return { valid: false, message: `O mínimo deve ser pelo menos ${currentEarthRadius.toFixed(2)} para o intervalo não abranger valores negativos` };
+            }
+            if (min <= 0) {
+                return { valid: false, message: 'O centro da Terra deve estar no eixo X positivo' };
+            }
+            return { valid: true };
+        }
+
+        // Vincular controlos de intervalo para todas as variáveis
+        bindRangeControls('paramA', 'inputA', 'paramA_min', 'paramA_max', 'paramA_warning', validateParamA);
+        bindRangeControls('paramB', 'inputB', 'paramB_min', 'paramB_max', 'paramB_warning', validateParamB);
+        bindRangeControls('paramC', 'inputC', 'paramC_min', 'paramC_max', 'paramC_warning', null);
+        bindRangeControls('earthX', 'inputEarthX', 'earthX_min', 'earthX_max', 'earthX_warning', validateEarthX);
+
+        // Sincronizar todos os controlos com avisos
+        syncControlsWithWarning(paramA, inputA, 'paramA_warning', updateFromControls);
+        syncControlsWithWarning(paramB, inputB, 'paramB_warning', updateFromControls);
+        syncControlsWithWarning(paramC, inputC, 'paramC_warning', updateFromControls);
+        syncControlsWithWarning(moonRadiusSlider, inputMoonR, 'moonRadius_warning', updateFromControls);
+        syncControlsWithWarning(earthXSlider, inputEarthX, 'earthX_warning', updateFromControls);
+        syncControlsWithWarning(earthRadiusSlider, inputEarthR, 'earthRadius_warning', updateFromControls);
+
+        // Event listeners para inputs da Lua (sem sliders)
+        inputMoonX.addEventListener('input', updateFromControls);
+        inputMoonX.addEventListener('change', updateFromControls);
+        inputMoonY.addEventListener('input', updateFromControls);
+        inputMoonY.addEventListener('change', updateFromControls);
+
+        launchBtn.addEventListener('click', () => {
+            if (isAnimating || isLanding || isMissing) return;
+
+            // Bloquear controlos durante o lançamento
+            setControlsEnabled(false);
+
+            // Iniciar contagem decrescente
+            startCountdown(() => {
+                // Reset estado
+                missionResult = { obj1: false, obj2: false, message: '' };
+                animationProgress = 0;
+                collisionPoint = null;
+                landingPoint = null;
+                landingAnimationProgress = 0;
+                missPoint = null;
+                missAnimationProgress = 0;
+                isPartialLanding = false;
+                hasLaunched = true;
+                isAnimating = true;
+                isLanding = false;
+                isMissing = false;
+                animate();
+            });
+        });
+
+        resetBtn.addEventListener('click', () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            isAnimating = false;
+            isLanding = false;
+            isMissing = false;
+
+            // Desbloquear controlos ao reiniciar
+            setControlsEnabled(true);
+            isPartialLanding = false;
+            animationProgress = 0;
+            landingAnimationProgress = 0;
+            missAnimationProgress = 0;
+            hasLaunched = false;
+            collisionPoint = null;
+            landingPoint = null;
+            missPoint = null;
+
+            // Reset sliders
+            paramA.value = -0.5;
+            paramB.value = 5;
+            paramC.value = 0;
+            moonRadiusSlider.value = 1.5;
+            earthXSlider.value = 10;
+            earthRadiusSlider.value = 4;
+
+            // Reset valores válidos anteriores
+            lastValidA = -0.5;
+            lastValidB = 5;
+
+            // Reset inputs
+            inputA.value = '-0.50';
+            inputB.value = '5.00';
+            inputC.value = '0.00';
+            inputMoonX.value = '4.00';
+            inputMoonY.value = '6.00';
+            inputMoonR.value = '1.50';
+            inputEarthX.value = '10.00';
+            inputEarthR.value = '4.00';
+
+            // Reset resultado
+            missionResult = { obj1: false, obj2: false, message: '' };
+
+            updateFromControls();
+        });
+
+        // Inicialização
+        function initializeInputs() {
+            inputA.value = parseFloat(paramA.value).toFixed(2);
+            inputB.value = parseFloat(paramB.value).toFixed(2);
+            inputC.value = parseFloat(paramC.value).toFixed(2);
+            // inputMoonX e inputMoonY já têm valores definidos no HTML
+            inputMoonR.value = parseFloat(moonRadiusSlider.value).toFixed(2);
+            inputEarthX.value = parseFloat(earthXSlider.value).toFixed(2);
+            inputEarthR.value = parseFloat(earthRadiusSlider.value).toFixed(2);
+        }
+
+        initializeInputs();
+        calculateDynamicScale();
+        updateFromControls();
+        draw();
+    </script>
+</body>
+</html>
